@@ -1,13 +1,26 @@
 -----optimize query:
-explain analyze select * from bar where c1 in (select c1 from foo where c2 like '%100'); --24316.45
+explain analyze select * from bar where c1 in (select c1 from foo where c2 like '%100');
 -----think as planner:
 create index on foo2(c2,c1);
 --which query will work the slowest (the highest cost)?
 explain analyze select * from foo2 where c1 = 10 and c2 = 'test10';
 explain analyze select * from foo2 where c1 = 10;
 explain analyze select * from foo2 where c2 = 'test10';
------the lowest cost wins:
-explain analyze select foo.c2 from foo, foo2 where foo2.c2 = 'test4' and foo.c1 = foo2.c1; --15422.29
+-----optimize maximum possible
+explain analyze select foo.c2 from foo, foo2 where foo2.c2 = 'test4' and foo.c1 = foo2.c1;
+-----make the query work faster?
+explain (analyze, buffers) select * from foo where c1 > 1000;
+--                                  QUERY PLAN
+-- --------------------------------------------------------------
+--  Seq Scan on foo  (cost=0.00..20834.00 rows=999014 width=37)
+--                   (actual time=0.216..188.488 rows=999000 loops=1)
+--    Filter: (c1 > 1000)
+--    Rows Removed by Filter: 1000
+--    Buffers: shared hit=8334
+--  Planning time: 0.067 ms
+--  Execution time: 281.589 ms
+-- (6 rows)
+--------------------------------------------------------------------------------
 -----identical query except date range for filtering rows, different plans:
 --this:
 -- Sort  (cost=43509.92..43523.14 rows=5291 width=20)
@@ -33,15 +46,3 @@ explain analyze select foo.c2 from foo, foo2 where foo2.c2 = 'test4' and foo.c1 
 --               ->  Seq Scan on accounts  (cost=0.00..121.32 rows=5220 width=21)
 --                     Filter: (NOT admin)
 --what would be the solution?
------make the query work faster?
-explain (analyze, buffers) select * from foo where c1 > 1000;
---                                  QUERY PLAN
--- --------------------------------------------------------------
---  Seq Scan on foo  (cost=0.00..20834.00 rows=999014 width=37)
---                   (actual time=0.216..188.488 rows=999000 loops=1)
---    Filter: (c1 > 1000)
---    Rows Removed by Filter: 1000
---    Buffers: shared hit=8334
---  Planning time: 0.067 ms
---  Execution time: 281.589 ms
--- (6 rows)

@@ -118,8 +118,12 @@ explain analyze select * from foo left join bar on foo.c1 = bar.c1;
 --reason is Batches: 2
 --all cache didn't fit in the memory so it was split on two parts
 --------------------------------------------------------------nested loop-----------------------------------------------------
-explain analyse select * from foo, bar where foo.c2 = 'test100' and foo.c1 = bar.c1;
-explain analyse select * from foo join bar on foo.c1 = bar.c1 where foo.c2 = 'test100';
+explain analyse select * from foo, bar where foo.c1 < 10 and foo.c1 = bar.c1;
 --Hash joins can not look up rows from the inner row source based on values retrieved from the outer row source,
 --but nested loops can
 --nested loops work well when one side is really small
+--another example:
+explain analyse select * from foo2, bar where foo2.c2 = 'test100' and foo2.c1 = bar.c1;
+
+--nested loop with "never executed" thing:
+explain analyse select * from foo, bar where foo.c2 = 'test100' and foo.c1 = bar.c1;

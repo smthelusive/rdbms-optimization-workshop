@@ -84,6 +84,11 @@ explain analyze select * from foo order by c1; --index scan
 -------------------------------------------------------------LIMIT------------------------------------------------------------
 explain (analyze, buffers) select * from foo where c2 like 'ab%'; --seq scan with filter
 explain (analyze, buffers) select * from foo where c2 like 'ab%' limit 10; --scan ends when we have 10 records
+
+--without limit sort method quicksort:
+explain analyze select c2 from foo2 order by c2;
+--with limit cost reduces and Sort Method: top-N heapsort
+explain analyze select c2 from foo2 order by c2 limit 10;
 --------------------------------------------------------------JOIN------------------------------------------------------------
 create table bar (c1 integer, c2 boolean);
 insert into bar
